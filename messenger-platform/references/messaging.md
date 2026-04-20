@@ -1,20 +1,20 @@
 # Messaging & Send API
 
-## Standard Messaging Window (24+1 Rule)
-Businesses have **24 hours** to respond to a user's message. 
-- Any message sent within this window can be of any type (promotional or non-promotional).
-- After 24 hours, you **MUST** use a **Message Tag** or a **Marketing Message Token**.
+## Standard Messaging Window (24h Policy)
+Businesses have **24 hours** to respond after a user interaction.
+- Inside this window, messages can be promotional or non-promotional.
+- Outside this window, use approved mechanisms: **Message Tags**, **Marketing Messages**, or other policy-approved paths.
 
 ## Message Tags
-Used to send non-promotional updates outside the 24h window.
-- `CONFIRMED_EVENT_UPDATE`: Reminders for booked events.
-- `POST_PURCHASE_UPDATE`: Invoices, shipping updates.
-- `ACCOUNT_UPDATE`: Security alerts, change in status.
-- `HUMAN_AGENT`: Allows human agents to respond within **7 days** (Beta).
+Used for approved non-promotional updates outside the 24h window:
+- `CONFIRMED_EVENT_UPDATE`
+- `POST_PURCHASE_UPDATE`
+- `ACCOUNT_UPDATE`
+- `HUMAN_AGENT` (extended manual response window)
 
 ## Send API Structure
-**Endpoint**: `POST /v25.0/me/messages`
-**Payload Example**:
+- **Endpoint**: `POST /v25.0/me/messages`
+- **Base payload**:
 ```json
 {
   "messaging_type": "RESPONSE",
@@ -23,37 +23,43 @@ Used to send non-promotional updates outside the 24h window.
 }
 ```
 
-## Structured Templates
-Templates allow you to send rich UI elements.
+## Core Message UI Components
+- **Conversation Components**: build message flows from text, attachments, quick replies, and postbacks.
+- **Buttons**: postback, URL, and other call-to-action formats.
+- **Quick Replies**: up to 13 one-tap responses that collapse after use.
+- **Sender Actions**: `mark_seen`, `typing_on`, `typing_off`.
+- **Persistent Menu**: fixed navigation surface configured in Messenger Profile.
 
+## Structured Templates
 ### Generic Template
-Horizontal carousel of up to 10 bubbles.
-- **Title**: 80 characters.
-- **Subtitle**: 80 characters.
-- **Buttons**: Up to 3 per bubble.
+Carousel-style cards (up to 10 bubbles), with title/subtitle/buttons.
 
 ### Button Template
-Text followed by up to 3 buttons.
-- Ideal for simple call-to-actions.
+Text + up to 3 buttons for focused decisions.
 
 ### Media Template
-High-res image or video with optional buttons.
-- Supports Facebook/Instagram native videos.
+Single rich media card (image/video) with optional action buttons.
 
 ### Receipt Template
-Detailed order summary.
-- Includes `order_number`, `currency`, `payment_method`, and `summary`.
+Order summary and transactional detail (`order_number`, `currency`, `payment_method`, `summary`).
 
 ### Customer Feedback Template
-Gathers CSAT or NPS scores.
-- Customizable scales (1-5, 1-10, or emoji-based).
+Post-interaction rating collection (CSAT/NPS-like patterns).
 
-## Interactive Elements
-- **Quick Replies**: Up to 13 buttons that disappear after use.
-- **Sender Actions**: `mark_seen`, `typing_on`, `typing_off`.
-- **Persistent Menu**: Bottom-aligned navigation menu.
+### Coupon Template
+Coupon-style presentation for promotional and campaign use cases.
 
-## Attachment Upload API
-Use `POST /me/message_attachments` to save media and get an `attachment_id`.
-- **Reuse**: Reuse the ID in the Send API to avoid re-uploading.
-- **Limit**: Max file size is 25MB.
+## Asset Reuse (Saving Assets)
+- Use `is_reusable: true` in Send API attachment payloads to receive an `attachment_id`.
+- Or upload in advance using `POST /me/message_attachments`.
+- Reuse `attachment_id` to avoid repeated uploads.
+- Supported types include image/audio/video/file (size limits apply; commonly 25MB max in Messenger docs).
+
+## Marketing Message Interaction Building Blocks
+- Marketing notification flows often use **postbacks** and **quick replies** for opt-in journeys.
+- Keep payload design explicit and versioned for safe routing.
+
+## Policy-Driven Messaging Notes
+- One-time and recurring notification mechanisms are opt-in driven and token based.
+- Keep a compliance-safe split between promotional and utility/transactional traffic.
+- Preserve audit trails for messaging type, tag, token origin, and consent updates.

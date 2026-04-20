@@ -1,23 +1,43 @@
-# Troubleshooting & Error Codes
+# Troubleshooting, Policy, and Operations
 
 ## Common Error Codes
-
-| Code | Subcode | Message | Solution |
+| Code | Subcode | Typical Meaning | Suggested Action |
 | :--- | :--- | :--- | :--- |
-| **10** | **2534022** | Outside allowed window | Use a Message Tag or wait for user to message first. |
-| **100** | **2018001** | No matching user found | Ensure the PSID is for the correct Page and app. |
-| **190** | **-** | Invalid OAuth access token | Refresh the Page Access Token; check for expiry. |
-| **200** | **-** | Permission error | Ensure the app is Live or user has a Role on the app. |
-| **613** | **-** | Rate limit reached | Implement exponential backoff. Formula: 200 * MAU. |
-| **551** | **-** | User block error | User has blocked the Page. You cannot send messages. |
-| **100** | **2018109** | Attachment too large | Reduce file size below 25MB. |
+| `10` | `2534022` | Messaging window/policy restriction | Use valid tag/token path or wait for user re-engagement. |
+| `100` | `2018001` | No matching user found | Verify PSID belongs to the same Page + app context. |
+| `190` | `-` | Invalid/expired OAuth token | Refresh or regenerate the Page token; validate scope. |
+| `200` | `-` | Permission error | Confirm app mode/review status and granted permissions. |
+| `613` | `-` | Rate limit reached | Apply retry with backoff and queue shaping. |
+| `551` | `-` | User blocked Page | Suppress sends to that user. |
+| `100` | `2018109` | Attachment too large | Reduce file size and retry. |
 
-## Best Practices for Stability
-1. **Deduplication**: Use `mid` in webhooks to ignore retries.
-2. **Domain Allowlisting**: Always allowlist your domain via `POST /me/messenger_profile` to enable Webview/Extensions.
-3. **App Review**: Ensure all required permissions (`pages_messaging`, etc.) are approved for Live usage.
-4. **Graph API Versioning**: Use the latest version (e.g., `v25.0`) to avoid using deprecated fields.
+## Reliability Practices
+1. **Deduplicate events** using `mid` + idempotency handling.
+2. **Allowlist domains** for webview/extensions via Messenger Profile.
+3. **Version consciously** against current Graph API versions.
+4. **Return webhook `200 OK` quickly** and process asynchronously.
+5. **Track delivery/read lifecycle** using `message_deliveries` and `message_reads`.
 
-## Status Checks
-- [Meta Status Page](https://metastatus.com/)
-- [Graph API Explorer](https://developers.facebook.com/tools/explorer/)
+## Policy and Compliance Checks
+- Enforce 24-hour standard messaging boundaries.
+- Use Message Tags only for approved use cases.
+- Keep records for consent/token-based outbound paths (marketing and notification flows).
+- Ensure automated experience disclosure where legally required.
+- Review developer/platform policy notices in Page Support Inbox and act before enforcement deadlines.
+
+## FAQ-Style Debugging Shortcuts
+- **Webhook not arriving**: verify both webhook configuration and Page subscription state.
+- **Invalid ID / no user found**: check PSID scope and token/Page pairing.
+- **Multiple bots on one Page**: use handover protocol + standby channel handling.
+- **One-time/recurring notification confusion**: confirm token lifecycle and consent webhook capture.
+
+## Support and Escalation Paths
+- **Meta Status**: https://metastatus.com/
+- **Graph API Explorer**: https://developers.facebook.com/tools/explorer/
+- **Developer Support + Bug Reporting**: Meta developer support surfaces.
+- **Developer Community Forum / FAQ resources**: for known issues and implementation patterns.
+
+## Operational Monitoring Notes
+- Monitor outbound/inbound latency and availability trends.
+- Alert on webhook retry spikes, signature failures, and opt-in token state transitions.
+- Keep runbooks for policy restriction notices and token outage response.
