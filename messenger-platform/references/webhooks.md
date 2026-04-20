@@ -2,25 +2,34 @@
 
 ## Configuration
 - **Callback URL**: Must be HTTPS and return `200 OK`.
-- **Verify Token**: A string you choose to verify the subscription.
+- **Verify Token**: A secret string you choose for subscription validation.
+- **Page Subscriptions**: Ensure your app is subscribed to the correct Page(s), not only configured at app level.
 
 ## Security (X-Hub-Signature)
-Meta signs all payloads. Validate using:
-1. Get the `X-Hub-Signature-256` header.
-2. Calculate HMAC SHA256 of the raw request body using your **App Secret**.
-3. Compare (prefixed with `sha256=`).
+Meta signs payloads. Validate using:
+1. Read `X-Hub-Signature-256`.
+2. Compute HMAC SHA256 of the **raw request body** using your App Secret.
+3. Compare against `sha256=<digest>` with a timing-safe equality check.
 
-## Event Reference
-| Field | Trigger |
+## Event Coverage
+| Event Field | Purpose |
 | :--- | :--- |
-| `messages` | Incoming text, images, or quick reply data. |
-| `messaging_postbacks` | User clicked a button with a `payload`. |
-| `message_reads` | User viewed your message. |
-| `message_echoes` | Page sent a message (useful for multi-agent sync). |
-| `messaging_optins` | User accepted a Recurring Notification or clicked a plugin. |
-| `messaging_handovers` | Thread control was passed/taken. |
-| `message_reactions` | User added/removed an emoji reaction. |
-| `message_edits` | User modified a previously sent message. |
+| `messages` | Incoming user messages (text, attachments, replies, fallback attachments). |
+| `messaging_postbacks` | CTA/postback button clicks with developer payloads. |
+| `message_reads` | Read receipts and watermark progression. |
+| `message_echoes` | Echoes of Page-sent messages for synchronization/analytics. |
+| `message_deliveries` | Delivery receipts (`watermark`, optional `mids`). |
+| `message_reactions` | Emoji reactions added/removed on messages. |
+| `message_edits` | User edited an existing message. |
+| `messaging_optins` | Marketing notification opt-in updates and token lifecycle events. |
+| `messaging_handovers` | Pass/take/request thread control and app role changes. |
+| `messaging_referrals` | Referral context from m.me links or ads for existing threads. |
+| `messaging_account_linking` | Account linked/unlinked events with pass-through authorization data. |
+| `response_feedback` | Good/bad response feedback from users on bot responses. |
+| `send_cart` | Cart/order payloads from commerce-related interactions. |
+| `group_feed` | Facebook Group comment events for private-reply use cases. |
+| `standby` | Events delivered while your app is not current thread owner. |
+| `messaging_game_plays` | Instant Games play-session events and context metadata. |
 
 ## Webhook Object Structure
 ```json
@@ -43,7 +52,14 @@ Meta signs all payloads. Validate using:
 }
 ```
 
-## Best Practices
-- **Respond Fast**: Meta expects a `200 OK` within 5 seconds. Process logic asynchronously.
-- **Deduplication**: Use `mid` (message ID) to avoid processing the same event twice if Meta retries.
-- **Chronological Order**: Use the `timestamp` field to ensure messages are processed in order.
+## Reliability and Processing Patterns
+- **Respond fast**: Return `200 OK` within ~5 seconds and process business logic asynchronously.
+- **Deduplicate**: Use `mid` + idempotency keys to suppress retries.
+- **Ordering**: Use `timestamp` and per-thread sequencing when processing concurrently.
+- **Ownership-aware routing**: Handle `standby` and `messaging_handovers` when multiple apps control the same thread.
+- **Delivery/read state**: Use `message_deliveries` and `message_reads` to update message-state timelines.
+
+## Practical Subscriptions Guidance
+- Subscribe only to events you handle in production.
+- Add `messaging_optins`, `messaging_handovers`, and `standby` when implementing recurring notifications or multi-app routing.
+- Add `group_feed` and `send_cart` only when your Page workflows require those vertical features.
